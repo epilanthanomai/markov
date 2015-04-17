@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import cPickle as pickle
 import random
 import urllib
 from collections import defaultdict
@@ -19,9 +20,21 @@ class Database(object):
     def append(self, a, b, c):
         self.wordmap[a, b].append(c)
 
+    def extend(self, a, b, cs):
+        self.wordmap[a, b].extend(cs)
+
     def next_word(self, a, b):
         choices = self.wordmap[a, b]
         return random.choice(choices)
+
+    def dumps(self):
+        return pickle.dumps(self.wordmap)
+
+    @classmethod
+    def loads(cls, contents):
+        db = cls()
+        db.wordmap = pickle.loads(contents)
+        return db
 
 
 class PlaintextSource(object):
@@ -68,6 +81,16 @@ class TextSource(object):
             yield t
 
 
+class DbSource(object):
+    def __init__(self, contents):
+        self.db = Database.loads(contents)
+
+    def word_lists(self):
+        for pair, choices in self.db.wordmap.items():
+            a, b = pair
+            yield a, b, choices
+
+
 class PdfSource(object):
     def __init__(self, contents):
         sio = StringIO(contents)
@@ -90,7 +113,7 @@ def get_sentence(db):
             c = db.next_word(a, b)
 
     words = list(sentence_words())
-    return ' '.join(words)
+    return u' '.join(words)
 
 
 def load_path(db, path):
@@ -99,6 +122,17 @@ def load_path(db, path):
     with closing(urllib.urlopen(basepath)) as f:
         contents = f.read()
 
+    # Is it a db pickle?
+    try:
+        source = DbSource(contents)
+        for a, b, cs in source.word_lists():
+            db.extend(a, b, cs)
+        return
+    except:
+        pass
+
+
+    # Is it a pdf?
     try:
         source = PdfSource(contents)
         for a, b, c in source.triples():
@@ -107,14 +141,25 @@ def load_path(db, path):
     except:
         pass
 
+    # treat it as text
     source = TextSource(contents, fragment)
     for a, b, c in source.triples():
         db.append(a, b, c)
 
 
+def dump_path(db, path):
+    contents = db.dumps()
+    with open(path, 'w') as outf:
+        outf.write(contents)
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
             description='Generate Markov chains from web texts.')
+    parser.add_argument('--dump', '-d', metavar='F', dest='dumppath',
+            help='Write the compiled word list to a file')
+    parser.add_argument('--quiet', '-q', dest='quiet', action='store_true',
+            help='Suppress normal output.')
     parser.add_argument('sources', metavar='F', nargs='+',
             help='Files or URLs to load')
     args = parser.parse_args(argv[1:]) 
@@ -123,7 +168,11 @@ def main(argv):
     for path in args.sources:
         load_path(db, path)
 
-    print get_sentence(db)
+    if args.dumppath:
+        dump_path(db, args.dumppath)
+
+    if not args.quiet:
+        print get_sentence(db)
 
 
 if __name__ == '__main__':

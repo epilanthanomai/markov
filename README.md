@@ -12,9 +12,9 @@ This script fetches web content in addition to reading local files, but please
 be considerate: If you're going to use a file many times then download it and
 use your local copy.
 
-    $ curl -o odyssey.txt http://classics.mit.edu/Homer/odyssey.mb.txt
-    $ curl -o leavesofgrass.html https://www.gutenberg.org/files/1322/1322-h/1322-h.htm
-    $ ./markov.py odyssey.txt leavesofgrass.html
-    Having pried through the regions infinite, Whose air I breathe, whose
-    ripples hear, lave me all that is the lord of thunder, who takes you to
-    Ithaca?
+    $ curl -o jane-eyre.html 'https://www.gutenberg.org/files/1260/1260-h/1260-h.htm'
+    $ ./markov.py 'http://arkhamarchivist.com/?dl_id=6' -d lovecraft-complete-works.mdb -q
+    $ ./markov.py jane-eyre.html lovecraft-complete-works.mdb
+    Rochester’s fortune: I came to see his venerable friend and sole assistant
+    since the circumstances attending my infernal union with a star; the
+    lineaments of a peeress.
