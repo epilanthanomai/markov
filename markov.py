@@ -13,53 +13,29 @@ from bs4 import BeautifulSoup
 
 
 class Database(object):
-    SENTENCE_ENDS = '!.?'
-
     def __init__(self):
         self.wordmap = defaultdict(list)
 
-    def load_text(self, path):
-        basepath, fragment = urldefrag(path)
-        with closing(urllib.urlopen(basepath)) as f:
-            contents = f.read()
+    def append(self, a, b, c):
+        self.wordmap[a, b].append(c)
 
-        try:
-            self.load_from_pdf(contents)
-        except:
-            self.load_from_soup_string(contents, fragment)
+    def next_word(self, a, b):
+        choices = self.wordmap[a, b]
+        return random.choice(choices)
 
-    def load_from_pdf(self, contents):
-        sio = StringIO(contents)
-        pdf = pyPdf.PdfFileReader(sio)
-        text = ' '.join(page.extractText() for page in pdf.pages)
-        self.load_from_string(text)
 
-    def load_from_soup_string(self, ss, fragment):
-        soup = BeautifulSoup(ss)
-        node = soup
+class PlaintextSource(object):
+    SENTENCE_ENDS = '!.?'
 
-        if fragment:
-            node = soup.find(id=fragment)
-        else:
-            body = soup.find('body')
-            if body:
-                node = body
+    def __init__(self, text):
+        self.text = text
 
-        self.load_from_string(unicode(node.text))
-
-    def load_from_string(self, s):
-        ts = self.triples_from_string(s)
-        for a, b, c in ts:
-            self.wordmap[a, b].append(c)
-
-    def triples_from_string(self, s):
-        words = s.split()
-        for t in self.triples(words):
+    def triples(self):
+        words = self.text.split()
+        for t in self.triples_from_words(words):
             yield t
 
-    def triples(self, words):
-        # We want chains for sentences. Use a (None, None) pair to represet
-        # each sentence beginning and end.
+    def triples_from_words(self, words):
         triple = [None, None, None]
         for word in words:
             triple = (triple + [word])[1:]
@@ -71,21 +47,69 @@ class Database(object):
                 triple = (triple + [None])[1:]
                 yield triple
 
-    def sentence(self):
-        words = list(self.sentence_words())
-        return ' '.join(words)
 
-    def sentence_words(self):
+class TextSource(object):
+    def __init__(self, text, fragment=None):
+        soup = BeautifulSoup(text)
+        node = soup
+
+        if fragment:
+            node = soup.find(id=fragment)
+        else:
+            body = soup.find('body')
+            if body:
+                node = body
+
+        self.text = unicode(node.text)
+
+    def triples(self):
+        psource = PlaintextSource(self.text)
+        for t in psource.triples():
+            yield t
+
+
+class PdfSource(object):
+    def __init__(self, contents):
+        sio = StringIO(contents)
+        pdf = pyPdf.PdfFileReader(sio)
+        self.text = ' '.join(page.extractText() for page in pdf.pages)
+
+    def triples(self):
+        psource = PlaintextSource(self.text)
+        for t in psource.triples():
+            yield t
+
+
+def get_sentence(db):
+    def sentence_words():
         a, b = None, None
-        c = self.next_word(a, b)
+        c = db.next_word(a, b)
         while c is not None:
             yield c
             a, b = b, c
-            c = self.next_word(a, b)
+            c = db.next_word(a, b)
 
-    def next_word(self, a, b):
-        choices = self.wordmap[a, b]
-        return random.choice(choices)
+    words = list(sentence_words())
+    return ' '.join(words)
+
+
+def load_path(db, path):
+    basepath, fragment = urldefrag(path)
+
+    with closing(urllib.urlopen(basepath)) as f:
+        contents = f.read()
+
+    try:
+        source = PdfSource(contents)
+        for a, b, c in source.triples():
+            db.append(a, b, c)
+        return
+    except:
+        pass
+
+    source = TextSource(contents, fragment)
+    for a, b, c in source.triples():
+        db.append(a, b, c)
 
 
 def main(argv):
@@ -97,8 +121,10 @@ def main(argv):
 
     db = Database()
     for path in args.sources:
-        db.load_text(path)
-    print db.sentence()
+        load_path(db, path)
+
+    print get_sentence(db)
+
 
 if __name__ == '__main__':
     import sys
