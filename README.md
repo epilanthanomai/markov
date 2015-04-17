@@ -8,14 +8,13 @@ reads plaintext files and uses them to train a [Markov
 Chain](http://en.wikipedia.org/wiki/Markov_chain) and output a single
 sentence.
 
-Hopefully future versions will be more polite by caching parsed web files,
-and more useful by ripping text out of markup.
+This script fetches web content in addition to reading local files, but please
+be considerate: If you're going to use a file many times then download it and
+use your local copy.
 
-    $ curl -o metamorphosis.txt https://www.gutenberg.org/cache/epub/5200/pg5200.txt
-    $ curl -o frankenstein.txt https://www.gutenberg.org/cache/epub/84/pg84.txt
-    $ curl -o grimms.txt http://www.gutenberg.org/cache/epub/2591/pg2591.txt
-    $ ./markov.py metamorphosis.txt frankenstein.txt grimms.txt
-    We saw Tilbury Fort and remembered the effect of solemnizing my mind
-    upon these histories, whilst my friends were snatched away; I was
-    oppressed by cold, I had departed.
-
+    $ curl -o odyssey.txt http://classics.mit.edu/Homer/odyssey.mb.txt
+    $ curl -o leavesofgrass.html https://www.gutenberg.org/files/1322/1322-h/1322-h.htm
+    $ ./markov.py odyssey.txt leavesofgrass.html
+    Having pried through the regions infinite, Whose air I breathe, whose
+    ripples hear, lave me all that is the lord of thunder, who takes you to
+    Ithaca?

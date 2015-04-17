@@ -3,8 +3,10 @@
 import argparse
 import random
 import urllib
+from bs4 import BeautifulSoup
 from collections import defaultdict
 from contextlib import closing
+from urlparse import urldefrag
 
 
 class Database(object):
@@ -14,9 +16,23 @@ class Database(object):
         self.wordmap = defaultdict(list)
 
     def load_text(self, path):
-        with closing(urllib.urlopen(path)) as f:
+        basepath, fragment = urldefrag(path)
+        with closing(urllib.urlopen(basepath)) as f:
             contents = f.read()
-        self.load_from_string(contents)
+        self.load_from_soup_string(contents, fragment)
+
+    def load_from_soup_string(self, ss, fragment):
+        soup = BeautifulSoup(ss)
+        node = soup
+
+        if fragment:
+            node = soup.find(id=fragment)
+        else:
+            body = soup.find('body')
+            if body:
+                node = body
+
+        self.load_from_string(unicode(node.text))
 
     def load_from_string(self, s):
         ts = self.triples_from_string(s)
