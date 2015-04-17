@@ -3,10 +3,13 @@
 import argparse
 import random
 import urllib
-from bs4 import BeautifulSoup
 from collections import defaultdict
 from contextlib import closing
+from cStringIO import StringIO
 from urlparse import urldefrag
+
+import pyPdf
+from bs4 import BeautifulSoup
 
 
 class Database(object):
@@ -19,7 +22,17 @@ class Database(object):
         basepath, fragment = urldefrag(path)
         with closing(urllib.urlopen(basepath)) as f:
             contents = f.read()
-        self.load_from_soup_string(contents, fragment)
+
+        try:
+            self.load_from_pdf(contents)
+        except:
+            self.load_from_soup_string(contents, fragment)
+
+    def load_from_pdf(self, contents):
+        sio = StringIO(contents)
+        pdf = pyPdf.PdfFileReader(sio)
+        text = ' '.join(page.extractText() for page in pdf.pages)
+        self.load_from_string(text)
 
     def load_from_soup_string(self, ss, fragment):
         soup = BeautifulSoup(ss)
