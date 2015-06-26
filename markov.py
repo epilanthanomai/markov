@@ -160,6 +160,8 @@ def main(argv):
             help='Write the compiled word list to a file')
     parser.add_argument('--quiet', '-q', dest='quiet', action='store_true',
             help='Suppress normal output.')
+    parser.add_argument('--count', '-n', metavar='N', dest='count', type=int,
+            help='Generate N sentences.')
     parser.add_argument('sources', metavar='F', nargs='+',
             help='Files or URLs to load')
     args = parser.parse_args(argv[1:]) 
@@ -172,7 +174,8 @@ def main(argv):
         dump_path(db, args.dumppath)
 
     if not args.quiet:
-        print get_sentence(db)
+        for _ in range(args.count):
+            print get_sentence(db)
 
 
 if __name__ == '__main__':
