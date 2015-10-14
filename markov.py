@@ -63,7 +63,7 @@ class PlaintextSource(object):
 
 class TextSource(object):
     def __init__(self, text, fragment=None):
-        soup = BeautifulSoup(text)
+        soup = BeautifulSoup(text, 'html.parser')
         node = soup
 
         if fragment:
