@@ -161,6 +161,7 @@ def main(argv):
     parser.add_argument('--quiet', '-q', dest='quiet', action='store_true',
             help='Suppress normal output.')
     parser.add_argument('--count', '-n', metavar='N', dest='count', type=int,
+            default=1,
             help='Generate N sentences.')
     parser.add_argument('sources', metavar='F', nargs='+',
             help='Files or URLs to load')
